@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">MyWebBrowser</string>
+    <string name="Browser">브라우져</string>
+    <string name="Weather">날씨</string>
+</resources>
