@@ -1,12 +1,16 @@
 package com.example.mywebbrowser;
 
-import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.widget.TextView;
+
+import org.w3c.dom.Text;
+
+import java.util.List;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -19,7 +23,9 @@ public class WeatherActivity extends AppCompatActivity {    // implements OnMapR
 //    protected SupportMapFragment mapFragment;
 
     private static final String BASE_URL = "https://api.openweathermap.org/data/2.5/";
+    private static final String GEO_CODE_URL = "http://api.openweathermap.org/geo/1.0/";
     private static final String API_KEY = "555e77f38f5b28cf6481409e56f93ad4";
+    private static final String METRIC = "metric";
 
 
     @Override
@@ -27,13 +33,13 @@ public class WeatherActivity extends AppCompatActivity {    // implements OnMapR
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_weather);
 
-//        mapFragment = null;
-//        mapFragment = (SupportMapFragment) getSupportFragmentManager()
-//                .findFragmentById(R.id.mapView);
-//
-////        if ( mapFragment!=null )
-//        mapFragment.getMapAsync(this);
+        Intent intent = getIntent();
+        String lat = intent.getStringExtra("lat");
+        String lon = intent.getStringExtra("lon");
+        String city = intent.getStringExtra("city");
 
+        TextView textView = this.findViewById(R.id.text_view_city2);
+        textView.setText( city );
 
         Retrofit retrofit = new Retrofit.Builder()
                 .baseUrl(BASE_URL)
@@ -42,17 +48,20 @@ public class WeatherActivity extends AppCompatActivity {    // implements OnMapR
 
         WeatherApi weatherApi = retrofit.create(WeatherApi.class);
 
-        Call<WeatherResponse> call = weatherApi.getWeatherData("seoul", API_KEY, "metric");
+        Call<WeatherResponse> call = weatherApi.getWeatherData(lat, lon, API_KEY, METRIC);
         call.enqueue(new Callback<WeatherResponse>() {
             @Override
             public void onResponse(Call<WeatherResponse> call, Response<WeatherResponse> response) {
                 if (response.isSuccessful()) {
                     WeatherResponse weatherResponse = response.body();
                     if (weatherResponse != null) {
-                        Coordinate coord = weatherResponse.getCoord();
                         Weather weather = weatherResponse.getMain();
-                        String cityName = weatherResponse.getName();
-                        weatherResponse.getWeather().forEach( weatherDesc -> Log.i(weatherDesc.main, weatherDesc.description) );
+
+                        TextView tempView = findViewById(R.id.text_view_temp);
+                        tempView.setText( String.format("섭씨 : %4.1f 도", weather.temp) );
+
+                        TextView weatherView = findViewById(R.id.text_view_weather);
+                        weatherView.setText(weatherResponse.getWeather().get(0).main);
 //                        WeatherDesc weatherDesc = weatherResponse.getWeather();
 
                         // 여기서 Weather 객체의 데이터를 사용하면 됩니다.
@@ -77,6 +86,40 @@ public class WeatherActivity extends AppCompatActivity {    // implements OnMapR
         Intent browserIntent = new Intent(WeatherActivity.this, MainActivity.class);
         startActivity(browserIntent);
         //finish();
+    }
+
+    private void initGeoCode(String cityName, String country)
+    {
+        Retrofit retrofit = new Retrofit.Builder()
+                .baseUrl(GEO_CODE_URL)
+                .addConverterFactory(GsonConverterFactory.create())
+                .build();
+
+        GeoCodeApi geoApi = retrofit.create(GeoCodeApi.class);
+
+        String cityCode = String.format("%s,%s", cityName, country.toUpperCase());
+        Call<List<GeoCode>> call = geoApi.getGeoCodeData(cityCode, API_KEY);
+        call.enqueue(new Callback<List<GeoCode>>() {
+            @Override
+            public void onResponse(Call<List<GeoCode>> call, Response<List<GeoCode>> response) {
+                if (response.isSuccessful()) {
+                    List<GeoCode> liGeoCodes = response.body();
+                    if (liGeoCodes != null) {
+                        liGeoCodes.forEach(System.out::println);
+                    }
+                }
+                else
+                {
+                    Log.e("API Error", "Response not successful");
+                }
+            }
+
+            @Override
+            public void onFailure(Call<List<GeoCode>> call, Throwable t) {
+                Log.e("Weather API", "Weather API 호출 실패 : " + t.getMessage());
+            }
+        });
+
     }
 
 

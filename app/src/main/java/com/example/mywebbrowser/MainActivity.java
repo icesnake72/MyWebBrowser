@@ -96,4 +96,10 @@ public class MainActivity extends AppCompatActivity {
         //finish();
     }
 
+    public void onClickButtonCityList(View view)
+    {
+        Intent cityIntent = new Intent(MainActivity.this, CityListActivity.class);
+        startActivity(cityIntent);
+    }
+
 }

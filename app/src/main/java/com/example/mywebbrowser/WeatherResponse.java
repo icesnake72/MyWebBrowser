@@ -31,8 +31,4 @@ public class WeatherResponse {
     {
         return weather;
     }
-
-//    public WeatherDesc getWeather() {
-//        return weather;
-//    }
 }
